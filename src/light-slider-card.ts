@@ -107,11 +107,7 @@ class LightSliderCard extends LitElement {
     var attributeValue = stateObj.attributes[attribute] ? Math.round((stateObj.attributes[attribute] - attributeMin) / attributeValues * 100) : 0;
     console.log(attributeValue);
     return html`
-      <div class="${fullscreen === true ? 'popup-wrapper':''}">
-            <div id="popup" class="popup-inner" @click="${e => this._close(e)}">
-            </div>
-            </div>
-            <div>
+      <div>
             <ha-card>
                 ${hideIcon ? html`` : html`
                 <div class="icon${fullscreen === true ? ' fullscreen':''}">
