@@ -32,7 +32,7 @@ const plugins = [
 
 export default [
   {
-    input: 'src/light-popup-card.ts',
+    input: 'src/light-slider-card.ts',
     output: {
       dir: 'dist',
       format: 'es',

@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit-element';
-import tinycolor, { TinyColor, isReadable } from '@ctrl/tinycolor';
+import tinycolor, { TinyColor } from '@ctrl/tinycolor';
 import { closePopUp } from 'card-tools/src/popup';
 import { fireEvent } from "card-tools/src/event";
 import { provideHass } from "card-tools/src/hass";
@@ -7,7 +7,7 @@ import { createCard } from "card-tools/src/lovelace-element.js";
 import {
   computeStateDisplay
 } from 'custom-card-helpers';
-class LightPopupCard extends LitElement {
+class LightSliderCard extends LitElement {
   config: any;
   hass: any;
   shadowRoot: any;
@@ -35,7 +35,7 @@ class LightPopupCard extends LitElement {
     var actionsInARow = this.config.actionsInARow ? this.config.actionsInARow : 4;
     var icon = this.config.icon ? this.config.icon : stateObj.attributes.icon ? stateObj.attributes.icon: 'mdi:lightbulb';
     var borderRadius = this.config.borderRadius ? this.config.borderRadius : '12px';  
-    var supportBrightness = 1;
+    var supportAttribute = 1;
     var onStates = this.config.onStates ? this.config.onStates : ['on'];
     var offStates = this.config.offStates ? this.config.offStates : ['off'];
     //Scenes
@@ -60,13 +60,22 @@ class LightPopupCard extends LitElement {
       switchValue = 1;
     }
 
+    /**
+     * Customized attributes (wwalczyszyn)
+     */
+    var attribute = this.config.attribute ? this.config.attribute : "brightness";
+    var attributeMin = this.config.attributeMin ? this.config.attributeMin : 0;
+    var attributeMax = this.config.attributeMax ? this.config.attributeMax : 255;
+    var attributeValues = attributeMax - attributeMin;
+    /***/
+
     var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
-    var brightnessWidth = this.config.brightnessWidth ? this.config.brightnessWidth : "150px";
-    var brightnessHeight = this.config.brightnessHeight ? this.config.brightnessHeight : "400px";
+    var attributeWidth = this.config.attributeWidth ? this.config.attributeWidth : "150px";
+    var attributeHeight = this.config.attributeHeight ? this.config.attributeHeight : "400px";
     var switchWidth = this.config.switchWidth ? this.config.switchWidth : "150px";
     var switchHeight = this.config.switchHeight ? this.config.switchHeight : "380px";
 
-    var color = this._getColorForLightEntity(stateObj, this.config.useTemperature, this.config.useBrightness);
+    var color = this._getColorForLightEntity(stateObj, this.config.useTemperature, this.config.useAttribute);
     var sliderColor = "sliderColor" in this.config ? this.config.sliderColor : "#FFF";
     var sliderColoredByLight = "sliderColoredByLight" in this.config ? this.config.sliderColoredByLight : false;
     var sliderThumbColor = "sliderThumbColor" in this.config ? this.config.sliderThumbColor : "#ddd";
@@ -95,20 +104,29 @@ class LightPopupCard extends LitElement {
         }
       }
     }
-    var brightness = stateObj.attributes.brightness ? Math.round(stateObj.attributes.brightness/2.55) : 0;
+    var attributeValue = stateObj.attributes[attribute] ? Math.round((stateObj.attributes[attribute] - attributeMin) / attributeValues * 100) : 0;
+    console.log(attributeValue);
     return html`
       <div class="${fullscreen === true ? 'popup-wrapper':''}">
             <div id="popup" class="popup-inner" @click="${e => this._close(e)}">
+            </div>
+            </div>
+            <div>
+            <ha-card>
                 ${hideIcon ? html`` : html`
                 <div class="icon${fullscreen === true ? ' fullscreen':''}">
                     <ha-icon style="${onStates.includes(stateObj.state) ? 'color:'+color+';' : ''}" icon="${icon}" />
                 </div>
                 `}
                 
-                ${ ((stateObj.attributes.supported_features & supportBrightness) && displayType == 'auto') || (displayType == 'slider') ? html`
-                    ${hideState ? html`` : html`<h4 id="brightnessValue">${offStates.includes(stateObj.state) ? this.hass.localize(`component.light.state._.off`) : brightness + '%'}</h4>`}
-                    <div class="range-holder" style="--slider-height: ${brightnessHeight};--slider-width: ${brightnessWidth};">
-                        <input type="range" style="--slider-width: ${brightnessWidth};--slider-height: ${brightnessHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:'+color+';':'--slider-color:'+sliderColor+';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};" .value="${offStates.includes(stateObj.state) ? 0 : Math.round(stateObj.attributes.brightness/2.55)}" @input=${e => this._previewBrightness(e.target.value)} @change=${e => this._setBrightness(stateObj, e.target.value)}>
+                ${ ((stateObj.attributes.supported_features & supportAttribute) && displayType == 'auto') || (displayType == 'slider') ? html`
+                    ${hideState ? html`` : html`<h4 id="attributeValue">${offStates.includes(stateObj.state) ? this.hass.localize(`component.light.state._.off`) : attributeValue + '%'}</h4>`}
+                    <div class="range-holder" style="--slider-height: ${attributeHeight};--slider-width: ${attributeWidth};">
+                        <input type="range" 
+                            style="--slider-width: ${attributeWidth};--slider-height: ${attributeHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:'+color+';':'--slider-color:'+sliderColor+';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};"
+                            .value="${offStates.includes(stateObj.state) ? 0 : attributeValue}"
+                            @input=${e => this._previewAttribute(e.target.value, attributeMin)}
+                            @change=${e => this._setAttribute(attribute, stateObj, e.target.value, attributeMin, attributeMax)}>
                     </div>
                 ` : html`
                     ${hideState ? html`` : html`<h4 id="switchValue">${computeStateDisplay(this.hass.localize, stateObj, this.hass.language)}</h4>`}
@@ -139,7 +157,7 @@ class LightPopupCard extends LitElement {
                     })}
                 </div>` : html ``}
                 ${this.settings ? html`<button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen':''}" @click="${() => this._openSettings()}">${this.config.settings.openButton ? this.config.settings.openButton:'Settings'}</button>`:html``}
-            </div>
+            </ha-card>
             
             ${this.settings ? html`
               <div id="settings" class="settings-inner" @click="${e => this._close(e)}">
@@ -215,16 +233,20 @@ class LightPopupCard extends LitElement {
     return items;
   }
 
-  _previewBrightness(value) {
-    const el = this.shadowRoot.getElementById("brightnessValue");
-    if(el) {el.innerText = (value == 0) ? "Off" : value + "%";}
+  _previewAttribute(value, min) {
+    const el = this.shadowRoot.getElementById("attributeValue");
+    if(el) {el.innerText = (value == min) ? "Off" : value + "%";} // todo value == 0, but should be some flag
   }
 
-  _setBrightness(state, value) {
-    this.hass.callService("homeassistant", "turn_on", {
+  _setAttribute(attribute, state, value, min, max) {
+    const calculated = Math.round(value / 100 * (max - min) + min);
+    const final = Math.round((calculated / (max - min) + min) * 100);
+    console.log(`Comes: ${value}, calculated: ${calculated}, final: ${final}`); 
+    const data = {
         entity_id: state.entity_id,
-        brightness: value * 2.55
-    });
+        [attribute]: Math.round(value / 100 * (max - min) + min)
+    };
+    this.hass.callService("homeassistant", "turn_on", data);
   }
   
   _switch(state) {
@@ -242,32 +264,34 @@ class LightPopupCard extends LitElement {
       }
 
       switch (action.action) {
-        case "call-service":
+        case "call-service": {
           const [domain, service] = action.service.split(".", 2);
           this.hass.callService(domain, service, action.service_data);
           break;
-        case "fire-dom-event":
+        }
+        case "fire-dom-event": {
           fireEvent("ll-custom", action);
           break;
+        }
       }
     }
   }
 
-  _getColorForLightEntity(stateObj, useTemperature, useBrightness) {
+  _getColorForLightEntity(stateObj, useTemperature, useAttribute) {
       var color = this.config.default_color ? this.config.default_color : undefined;
       if (stateObj) {
         if (stateObj.attributes.rgb_color) {
           color = `rgb(${stateObj.attributes.rgb_color.join(',')})`;
-          if (stateObj.attributes.brightness) {
-            color = this._applyBrightnessToColor(color, (stateObj.attributes.brightness + 245) / 5);
+          if (stateObj.attributes.attribute) {
+            color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
           }
         } else if (useTemperature && stateObj.attributes.color_temp && stateObj.attributes.min_mireds && stateObj.attributes.max_mireds) {
           color = this._getLightColorBasedOnTemperature(stateObj.attributes.color_temp, stateObj.attributes.min_mireds, stateObj.attributes.max_mireds);
-          if (stateObj.attributes.brightness) {
-            color = this._applyBrightnessToColor(color, (stateObj.attributes.brightness + 245) / 5);
+          if (stateObj.attributes.attribute) {
+            color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
           }
-        } else if (useBrightness && stateObj.attributes.brightness) {
-          color = this._applyBrightnessToColor(this._getDefaultColorForState(), (stateObj.attributes.brightness + 245) / 5);
+        } else if (useAttribute && stateObj.attributes.attribute) {
+          color = this._applyAttributeToColor(this._getDefaultColorForState(), (stateObj.attributes.attribute + 245) / 5);
         } else {
           color = this._getDefaultColorForState();
         }
@@ -275,10 +299,10 @@ class LightPopupCard extends LitElement {
       return color;
     }
 
-    _applyBrightnessToColor(color, brightness) {
+    _applyAttributeToColor(color, attribute) {
         const colorObj = new TinyColor(this._getColorFromVariable(color));
         if (colorObj.isValid) {
-          const validColor = colorObj.mix('black', 100 - brightness).toString();
+          const validColor = colorObj.mix('black', 100 - attribute).toString();
           if (validColor) return validColor;
         }
         return color;
@@ -315,13 +339,13 @@ class LightPopupCard extends LitElement {
   }
 
   getCardSize() {
-    return this.config.entities.length + 1;
+    return 5;//this.config.entities.length + 1;
   }
   
   static get styles() {
     return css`
         :host {
-            background-color:#000!important;
+            //background-color:#000!important;
         }
         .popup-wrapper {
             margin-top:64px;
@@ -377,7 +401,7 @@ class LightPopupCard extends LitElement {
           top: 25px;
         }
         .fullscreen {
-          margin-top:-64px;
+          //margin-top:-64px;
         }
         .icon {
             text-align:center;
@@ -412,6 +436,8 @@ class LightPopupCard extends LitElement {
             width: var(--slider-width);
             position:relative;
             display: block;
+
+            margin: auto;
         }
         .range-holder input[type="range"] {
             outline: 0;
@@ -573,4 +599,4 @@ class LightPopupCard extends LitElement {
   
 }
 
-customElements.define('light-popup-card', LightPopupCard);
+customElements.define('light-slider-card', LightSliderCard);
