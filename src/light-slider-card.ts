@@ -11,7 +11,7 @@ class LightSliderCard extends LitElement {
   config: any;
   hass: any;
   shadowRoot: any;
-  actionRows:any = [];
+  actionRows: any = [];
   settings = false;
   settingsCustomCard = false;
   settingsPosition = "bottom";
@@ -23,35 +23,35 @@ class LightSliderCard extends LitElement {
       active: {}
     };
   }
-  
+
   constructor() {
     super();
   }
-  
+
   render() {
-    
+
     var entity = this.config.entity;
     var stateObj = this.hass.states[entity];
     var actionsInARow = this.config.actionsInARow ? this.config.actionsInARow : 4;
-    var icon = this.config.icon ? this.config.icon : stateObj.attributes.icon ? stateObj.attributes.icon: 'mdi:lightbulb';
-    var borderRadius = this.config.borderRadius ? this.config.borderRadius : '12px';  
+    var icon = this.config.icon ? this.config.icon : stateObj.attributes.icon ? stateObj.attributes.icon : 'mdi:lightbulb';
+    var borderRadius = this.config.borderRadius ? this.config.borderRadius : '12px';
     var supportAttribute = 1;
     var onStates = this.config.onStates ? this.config.onStates : ['on'];
     var offStates = this.config.offStates ? this.config.offStates : ['off'];
     //Scenes
     var actionSize = "actionSize" in this.config ? this.config.actionSize : "50px";
     var actions = this.config.actions;
-    if(actions && actions.length > 0) {
-        
-        var numberOfRows = Math.ceil(actions.length / actionsInARow);
-        for(var i=0;i<numberOfRows;i++) {
-          this.actionRows[i] = [];
-            for(var j=0;j<actionsInARow;j++) {
-                if(actions[(i*actionsInARow)+j]) {
-                  this.actionRows[i][j] = actions[(i*actionsInARow)+j];
-                }
-            }
+    if (actions && actions.length > 0) {
+
+      var numberOfRows = Math.ceil(actions.length / actionsInARow);
+      for (var i = 0; i < numberOfRows; i++) {
+        this.actionRows[i] = [];
+        for (var j = 0; j < actionsInARow; j++) {
+          if (actions[(i * actionsInARow) + j]) {
+            this.actionRows[i][j] = actions[(i * actionsInARow) + j];
+          }
         }
+      }
     }
 
     var switchValue = 0;
@@ -64,12 +64,12 @@ class LightSliderCard extends LitElement {
      * Customized attributes (wwalczyszyn)
      */
     var attribute = this.config.attribute ? this.config.attribute : "brightness";
-    var attributeMin = this.config.attributeMin ? this.config.attributeMin : 0;
-    var attributeMax = this.config.attributeMax ? this.config.attributeMax : 255;
+    var attributeMin = this.config.attributeMin ? this.config.attributeMin : attribute == "color_temp" ? stateObj.attributes.min_mireds : 0;
+    var attributeMax = this.config.attributeMax ? this.config.attributeMax : attribute == "color_temp" ? stateObj.attributes.max_mireds : 255;
     var attributeValues = attributeMax - attributeMin;
+    var offValue = this.config.offValue ? this.config.offValue : attribute == "color_temp" ? -1 : 0;
     /***/
 
-    var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
     var attributeWidth = this.config.attributeWidth ? this.config.attributeWidth : "150px";
     var attributeHeight = this.config.attributeHeight ? this.config.attributeHeight : "400px";
     var switchWidth = this.config.switchWidth ? this.config.switchWidth : "150px";
@@ -82,8 +82,8 @@ class LightSliderCard extends LitElement {
     var sliderTrackColor = "sliderTrackColor" in this.config ? this.config.sliderTrackColor : "#ddd";
     var switchColor = "switchColor" in this.config ? this.config.switchColor : "#FFF";
     var switchTrackColor = "switchTrackColor" in this.config ? this.config.switchTrackColor : "#ddd";
-    var actionRowCount = 0;   
-    var displayType =  "displayType" in this.config ? this.config.displayType : "auto";
+    var actionRowCount = 0;
+    var displayType = "displayType" in this.config ? this.config.displayType : "auto";
 
     var hideIcon = "hideIcon" in this.config ? this.config.hideIcon : false;
     var hideState = "hideState" in this.config ? this.config.hideState : false;
@@ -91,92 +91,98 @@ class LightSliderCard extends LitElement {
     this.settings = "settings" in this.config ? true : false;
     this.settingsCustomCard = "settingsCard" in this.config ? true : false;
     this.settingsPosition = "settingsPosition" in this.config ? this.config.settingsPosition : "bottom";
-    if(this.settingsCustomCard && this.config.settingsCard.cardOptions) {
-      if(this.config.settingsCard.cardOptions.entity && this.config.settingsCard.cardOptions.entity == 'this') {
+    if (this.settingsCustomCard && this.config.settingsCard.cardOptions) {
+      if (this.config.settingsCard.cardOptions.entity && this.config.settingsCard.cardOptions.entity == 'this') {
         this.config.settingsCard.cardOptions.entity = entity;
-      } else if(this.config.settingsCard.cardOptions.entity_id && this.config.settingsCard.cardOptions.entity_id == 'this') {
+      } else if (this.config.settingsCard.cardOptions.entity_id && this.config.settingsCard.cardOptions.entity_id == 'this') {
         this.config.settingsCard.cardOptions.entity_id = entity;
-      } else if(this.config.settingsCard.cardOptions.entities) {
-        for(let key in this.config.settingsCard.cardOptions.entities) {
-          if(this.config.settingsCard.cardOptions.entities[key] == 'this') {
+      } else if (this.config.settingsCard.cardOptions.entities) {
+        for (let key in this.config.settingsCard.cardOptions.entities) {
+          if (this.config.settingsCard.cardOptions.entities[key] == 'this') {
             this.config.settingsCard.cardOptions.entities[key] = entity;
           }
         }
       }
     }
     var attributeValue = stateObj.attributes[attribute] ? Math.round((stateObj.attributes[attribute] - attributeMin) / attributeValues * 100) : 0;
-    console.log(attributeValue);
     return html`
       <div>
-            <ha-card>
-                ${hideIcon ? html`` : html`
-                <div class="icon${fullscreen === true ? ' fullscreen':''}">
-                    <ha-icon style="${onStates.includes(stateObj.state) ? 'color:'+color+';' : ''}" icon="${icon}" />
-                </div>
-                `}
-                
-                ${ ((stateObj.attributes.supported_features & supportAttribute) && displayType == 'auto') || (displayType == 'slider') ? html`
-                    ${hideState ? html`` : html`<h4 id="attributeValue">${offStates.includes(stateObj.state) ? this.hass.localize(`component.light.state._.off`) : attributeValue + '%'}</h4>`}
-                    <div class="range-holder" style="--slider-height: ${attributeHeight};--slider-width: ${attributeWidth};">
-                        <input type="range" 
-                            style="--slider-width: ${attributeWidth};--slider-height: ${attributeHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:'+color+';':'--slider-color:'+sliderColor+';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};"
-                            .value="${offStates.includes(stateObj.state) ? 0 : attributeValue}"
-                            @input=${e => this._previewAttribute(e.target.value, attributeMin)}
-                            @change=${e => this._setAttribute(attribute, stateObj, e.target.value, attributeMin, attributeMax)}>
-                    </div>
-                ` : html`
-                    ${hideState ? html`` : html`<h4 id="switchValue">${computeStateDisplay(this.hass.localize, stateObj, this.hass.language)}</h4>`}
-                    <div class="switch-holder" style="--switch-height: ${switchHeight};--switch-width: ${switchWidth};">
-                        <input type="range" style="--switch-width: ${switchWidth};--switch-height: ${switchHeight}; --slider-border-radius: ${borderRadius}; --switch-color: ${switchColor}; --switch-track-color: ${switchTrackColor};" value="0" min="0" max="1" .value="${switchValue}" @change=${() => this._switch(stateObj)}>
-                    </div>
-                `}
-                
-                ${actions && actions.length > 0 ? html`
-                <div class="action-holder">
-
-                    ${this.actionRows.map((actionRow) => {
-                      actionRowCount++;
-                      var actionCount = 0;
-                      return html`
-                        <div class="action-row">
-                        ${actionRow.map((action) => {
-                          actionCount++;
-                          return html`
-                            <div class="action" style="--size:${actionSize};" @click="${e => this._activateAction(e)}" data-service="${actionRowCount}#${actionCount}">
-                                <span class="color" style="background-color: ${action.color};border-color: ${action.color};--size:${actionSize};${action.image ? "background-size: contain;background-image:url('"+action.image+"')" : ""}">${action.icon ? html`<ha-icon icon="${action.icon}" />`:html``}</span>
-                                ${action.name ? html`<span class="name">${action.name}</span>`: html``}
-                            </div>
-                          `
-                        })}
-                        </div>
-                      `
-                    })}
-                </div>` : html ``}
-                ${this.settings ? html`<button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen':''}" @click="${() => this._openSettings()}">${this.config.settings.openButton ? this.config.settings.openButton:'Settings'}</button>`:html``}
-            </ha-card>
-            
-            ${this.settings ? html`
-              <div id="settings" class="settings-inner" @click="${e => this._close(e)}">
-                ${this.settingsCustomCard ? html`
-                  <div class="custom-card" data-card="${this.config.settingsCard.type}" data-options="${JSON.stringify(this.config.settingsCard.cardOptions)}" data-style="${this.config.settingsCard.cardStyle ? this.config.settingsCard.cardStyle : ''}">
-                  </div>
-                `:html`
-                    <p style="color:#F00;">Set settingsCustomCard to render a lovelace card here!</p>
-                `}
-                <button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen':''}" @click="${() => this._closeSettings()}">${this.config.settings.closeButton ? this.config.settings.closeButton:'Close'}</button>
+        <ha-card>
+          ${hideIcon ? html`` : html`
+          <div class="icon">
+              <ha-icon style="${onStates.includes(stateObj.state) ? 'color:' + color + ';' : ''}" icon="${icon}" />
+          </div>
+          `}
+          
+          ${((stateObj.attributes.supported_features & supportAttribute) && displayType == 'auto') || (displayType == 'slider') ? html`
+              ${hideState ? html`` : html`<h4 id="attributeValue">${offStates.includes(stateObj.state) ? this.hass.localize(`component.light.state._.off`) : attributeValue + '%'}</h4>`}
+              <div class="range-holder" style="--slider-height: ${attributeHeight};--slider-width: ${attributeWidth};">
+                <input type="range" 
+                    style="--slider-width: ${attributeWidth};--slider-height: ${attributeHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:' + color + ';' : '--slider-color:' + sliderColor + ';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};"                  
+                    .value="${offStates.includes(stateObj.state) ? 0 : this._getValue(attributeValue)}"
+                    @input=${e => this._previewAttribute(e.target.value, offValue)}
+                    @change=${e => this._setAttribute(attribute, stateObj, e.target.value, attributeMin, attributeMax)}>
               </div>
-            `:html``}
+          ` : html`
+              ${hideState ? html`` : html`<h4 id="switchValue">${computeStateDisplay(this.hass.localize, stateObj, this.hass.language)}</h4>`}
+              <div class="switch-holder" style="--switch-height: ${switchHeight};--switch-width: ${switchWidth};">
+                  <input type="range" style="--switch-width: ${switchWidth};--switch-height: ${switchHeight}; --slider-border-radius: ${borderRadius}; --switch-color: ${switchColor}; --switch-track-color: ${switchTrackColor};" value="0" min="0" max="1" .value="${switchValue}" @change=${() => this._switch(stateObj)}>
+              </div>
+          `}
+          
+          ${actions && actions.length > 0 ? html`
+          <div class="action-holder">
+          ${this.actionRows.map((actionRow) => {
+              actionRowCount++;
+              var actionCount = 0;
+              return html`
+              <div class="action-row">
+              ${actionRow.map((action) => {
+                actionCount++;
+                return html`
+                    <div class="action" style="--size:${actionSize};" @click="${e => this._activateAction(e)}" data-service="${actionRowCount}#${actionCount}">
+                        <span class="color" style="background-color: ${action.color};border-color: ${action.color};--size:${actionSize};${action.image ? "background-size: contain;background-image:url('" + action.image + "')" : ""}">${action.icon ? html`<ha-icon icon="${action.icon}" />` : html``}</span>
+                        ${action.name ? html`<span class="name">${action.name}</span>` : html``}
+                    </div>
+                  `
+              })}
+              </div>
+            `
+          })}
+          </div>` : html``}
+          ${this.settings ? html`<button class="settings-btn ${this.settingsPosition}" @click="${() => this._openSettings()}">${this.config.settings.openButton ? this.config.settings.openButton : 'Settings'}</button>` : html``}
+        </ha-card>
+        
+        ${this.settings ? html`
+          <div id="settings" class="settings-inner" @click="${e => this._close(e)}">
+            ${this.settingsCustomCard ? html`
+              <div class="custom-card" data-card="${this.config.settingsCard.type}" data-options="${JSON.stringify(this.config.settingsCard.cardOptions)}" data-style="${this.config.settingsCard.cardStyle ? this.config.settingsCard.cardStyle : ''}">
+              </div>
+            `: html`
+                <p style="color:#F00;">Set settingsCustomCard to render a lovelace card here!</p>
+            `}
+            <button class="settings-btn ${this.settingsPosition}" @click="${() => this._closeSettings()}">${this.config.settings.closeButton ? this.config.settings.closeButton : 'Close'}</button>
+          </div>
+        `: html``}
         </div>
     `;
+  }
+
+  _getValue(attributeValue) {
+    console.log(`Value: ${attributeValue}`);
+    const el = this.shadowRoot.querySelector(".range-holder > input");
+    if (el) console.log(`Input value: ${el.value}`);
+
+    return attributeValue;
   }
 
   updated() { }
 
   firstUpdated() {
-    if(this.settings && !this.settingsCustomCard) {
-    const mic = this.shadowRoot.querySelector("more-info-controls").shadowRoot;
-    mic.removeChild(mic.querySelector("app-toolbar"));
-    } else if(this.settings && this.settingsCustomCard) {
+    if (this.settings && !this.settingsCustomCard) {
+      const mic = this.shadowRoot.querySelector("more-info-controls").shadowRoot;
+      mic.removeChild(mic.querySelector("app-toolbar"));
+    } else if (this.settings && this.settingsCustomCard) {
       this.shadowRoot.querySelectorAll(".custom-card").forEach(customCard => {
         var card = {
           type: customCard.dataset.card
@@ -186,20 +192,20 @@ class LightSliderCard extends LitElement {
         customCard.appendChild(cardElement);
         provideHass(cardElement);
         let style = "";
-        if(customCard.dataset.style) {
+        if (customCard.dataset.style) {
           style = customCard.dataset.style;
         }
-        if(style!= "") {
+        if (style != "") {
           let itterations = 0;
-          let interval = setInterval(function() {
-              if(cardElement && cardElement.shadowRoot) {
-                  window.clearInterval(interval);
-                  var styleElement = document.createElement('style');
-                  styleElement.innerHTML = style;
-                  cardElement.shadowRoot.appendChild(styleElement);
-              } else if(++itterations === 10) {
-                  window.clearInterval(interval);
-              }
+          let interval = setInterval(function () {
+            if (cardElement && cardElement.shadowRoot) {
+              window.clearInterval(interval);
+              var styleElement = document.createElement('style');
+              styleElement.innerHTML = style;
+              cardElement.shadowRoot.appendChild(styleElement);
+            } else if (++itterations === 10) {
+              window.clearInterval(interval);
+            }
           }, 100);
         }
       });
@@ -207,8 +213,8 @@ class LightSliderCard extends LitElement {
   }
 
   _close(event) {
-    if(event && (event.target.className.includes('popup-inner') || event.target.className.includes('settings-inner'))) {
-        closePopUp();
+    if (event && (event.target.className.includes('popup-inner') || event.target.className.includes('settings-inner'))) {
+      closePopUp();
     }
   }
 
@@ -229,33 +235,34 @@ class LightSliderCard extends LitElement {
     return items;
   }
 
-  _previewAttribute(value, min) {
+  _previewAttribute(value, offValue) {
+    console.log(`Preview: ${value}`);
     const el = this.shadowRoot.getElementById("attributeValue");
-    if(el) {el.innerText = (value == min) ? "Off" : value + "%";} // todo value == 0, but should be some flag
+    if (el) { el.innerText = (value == offValue) ? this.hass.localize(`component.light.state._.off`) : value + "%"; }
   }
 
   _setAttribute(attribute, state, value, min, max) {
     const calculated = Math.round(value / 100 * (max - min) + min);
     const final = Math.round((calculated / (max - min) + min) * 100);
-    console.log(`Comes: ${value}, calculated: ${calculated}, final: ${final}`); 
+    console.log(`Comes: ${value}, calculated: ${calculated}, final: ${final}`);
     const data = {
-        entity_id: state.entity_id,
-        [attribute]: Math.round(value / 100 * (max - min) + min)
+      entity_id: state.entity_id,
+      [attribute]: Math.round(value / 100 * (max - min) + min)
     };
     this.hass.callService("homeassistant", "turn_on", data);
   }
-  
+
   _switch(state) {
-      this.hass.callService("homeassistant", "toggle", {
-        entity_id: state.entity_id    
-      });
+    this.hass.callService("homeassistant", "toggle", {
+      entity_id: state.entity_id
+    });
   }
-  
+
   _activateAction(e) {
-    if(e.target.dataset && e.target.dataset.service) {
+    if (e.target.dataset && e.target.dataset.service) {
       const [row, item] = e.target.dataset.service.split("#", 2);
-      const action = this.actionRows[row-1][item-1];
-      if(!("action" in action)) {
+      const action = this.actionRows[row - 1][item - 1];
+      if (!("action" in action)) {
         action.action = 'call-service';
       }
 
@@ -274,59 +281,59 @@ class LightSliderCard extends LitElement {
   }
 
   _getColorForLightEntity(stateObj, useTemperature, useAttribute) {
-      var color = this.config.default_color ? this.config.default_color : undefined;
-      if (stateObj) {
-        if (stateObj.attributes.rgb_color) {
-          color = `rgb(${stateObj.attributes.rgb_color.join(',')})`;
-          if (stateObj.attributes.attribute) {
-            color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
-          }
-        } else if (useTemperature && stateObj.attributes.color_temp && stateObj.attributes.min_mireds && stateObj.attributes.max_mireds) {
-          color = this._getLightColorBasedOnTemperature(stateObj.attributes.color_temp, stateObj.attributes.min_mireds, stateObj.attributes.max_mireds);
-          if (stateObj.attributes.attribute) {
-            color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
-          }
-        } else if (useAttribute && stateObj.attributes.attribute) {
-          color = this._applyAttributeToColor(this._getDefaultColorForState(), (stateObj.attributes.attribute + 245) / 5);
-        } else {
-          color = this._getDefaultColorForState();
+    var color = this.config.default_color ? this.config.default_color : undefined;
+    if (stateObj) {
+      if (stateObj.attributes.rgb_color) {
+        color = `rgb(${stateObj.attributes.rgb_color.join(',')})`;
+        if (stateObj.attributes.attribute) {
+          color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
         }
+      } else if (useTemperature && stateObj.attributes.color_temp && stateObj.attributes.min_mireds && stateObj.attributes.max_mireds) {
+        color = this._getLightColorBasedOnTemperature(stateObj.attributes.color_temp, stateObj.attributes.min_mireds, stateObj.attributes.max_mireds);
+        if (stateObj.attributes.attribute) {
+          color = this._applyAttributeToColor(color, (stateObj.attributes.attribute + 245) / 5);
+        }
+      } else if (useAttribute && stateObj.attributes.attribute) {
+        color = this._applyAttributeToColor(this._getDefaultColorForState(), (stateObj.attributes.attribute + 245) / 5);
+      } else {
+        color = this._getDefaultColorForState();
       }
-      return color;
     }
+    return color;
+  }
 
-    _applyAttributeToColor(color, attribute) {
-        const colorObj = new TinyColor(this._getColorFromVariable(color));
-        if (colorObj.isValid) {
-          const validColor = colorObj.mix('black', 100 - attribute).toString();
-          if (validColor) return validColor;
-        }
-        return color;
+  _applyAttributeToColor(color, attribute) {
+    const colorObj = new TinyColor(this._getColorFromVariable(color));
+    if (colorObj.isValid) {
+      const validColor = colorObj.mix('black', 100 - attribute).toString();
+      if (validColor) return validColor;
     }
+    return color;
+  }
 
-    _getLightColorBasedOnTemperature(current, min, max) {
-        const high = new TinyColor('rgb(255, 160, 0)'); // orange-ish
-        const low = new TinyColor('rgb(166, 209, 255)'); // blue-ish
-        const middle = new TinyColor('white');
-        const mixAmount = (current - min) / (max - min) * 100;
-        if (mixAmount < 50) {
-          return tinycolor(low).mix(middle, mixAmount * 2).toRgbString();
-        } else {
-          return tinycolor(middle).mix(high, (mixAmount - 50) * 2).toRgbString();
-        }
+  _getLightColorBasedOnTemperature(current, min, max) {
+    const high = new TinyColor('rgb(255, 160, 0)'); // orange-ish
+    const low = new TinyColor('rgb(166, 209, 255)'); // blue-ish
+    const middle = new TinyColor('white');
+    const mixAmount = (current - min) / (max - min) * 100;
+    if (mixAmount < 50) {
+      return tinycolor(low).mix(middle, mixAmount * 2).toRgbString();
+    } else {
+      return tinycolor(middle).mix(high, (mixAmount - 50) * 2).toRgbString();
     }
+  }
 
-    _getDefaultColorForState() {
-      return this.config.color_on ? this.config.color_on: '#f7d959';
-    }
+  _getDefaultColorForState() {
+    return this.config.color_on ? this.config.color_on : '#f7d959';
+  }
 
-    _getColorFromVariable(color: string): string {
-      if (typeof color !== "undefined" && color.substring(0, 3) === 'var') {
-        return window.getComputedStyle(document.documentElement).getPropertyValue(color.substring(4).slice(0, -1)).trim();
-      }
-      return color;
+  _getColorFromVariable(color: string): string {
+    if (typeof color !== "undefined" && color.substring(0, 3) === 'var') {
+      return window.getComputedStyle(document.documentElement).getPropertyValue(color.substring(4).slice(0, -1)).trim();
     }
-  
+    return color;
+  }
+
   setConfig(config) {
     if (!config.entity) {
       throw new Error("You need to define an entity");
@@ -337,7 +344,7 @@ class LightSliderCard extends LitElement {
   getCardSize() {
     return 5;//this.config.entities.length + 1;
   }
-  
+
   static get styles() {
     return css`
         :host {
@@ -390,14 +397,8 @@ class LightSliderCard extends LitElement {
         .settings-btn.bottom {
           bottom:15px;
         }
-        .settings-btn.bottom.fullscreen {
-          margin:0;
-        }
         .settings-btn.top {
           top: 25px;
-        }
-        .fullscreen {
-          //margin-top:-64px;
         }
         .icon {
             text-align:center;
@@ -591,8 +592,8 @@ class LightSliderCard extends LitElement {
             pointer-events: none;
         }
     `;
-  }  
-  
+  }
+
 }
 
 customElements.define('light-slider-card', LightSliderCard);
